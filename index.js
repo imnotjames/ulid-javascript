@@ -1,3 +1,4 @@
+/*
 export interface PRNG {
   (): number
 }
@@ -9,8 +10,8 @@ export interface ULID {
 export interface LibError extends Error {
   source: string
 }
-
-function createError(message: string): LibError {
+*/
+function createError(message) {
   const err = new Error(message) as LibError
   err.source = "ulid"
   return err
@@ -24,16 +25,16 @@ const TIME_MAX = Math.pow(2, 48) - 1
 const TIME_LEN = 10
 const RANDOM_LEN = 16
 
-export function replaceCharAt(str: string, index: number, char: string) {
+function replaceCharAt(str, index, char) {
   if (index > str.length - 1) {
-    return str
+    return str;
   }
-  return str.substr(0, index) + char + str.substr(index + 1)
+  return str.substr(0, index) + char + str.substr(index + 1);
 }
 
-export function incrementBase32(str: string): string {
-  let done: string = undefined
-  let index = str.length
+function incrementBase32(str) {
+  let done = undefined;
+  let index = str.length;
   let char
   let charIndex
   const maxCharIndex = ENCODING_LEN - 1
@@ -55,7 +56,7 @@ export function incrementBase32(str: string): string {
   throw createError("cannot increment this string")
 }
 
-export function randomChar(prng: PRNG): string {
+function randomChar(prng) {
   let rand = Math.floor(prng() * ENCODING_LEN)
   if (rand === ENCODING_LEN) {
     rand = ENCODING_LEN - 1
@@ -63,7 +64,7 @@ export function randomChar(prng: PRNG): string {
   return ENCODING.charAt(rand)
 }
 
-export function encodeTime(now: number, len: number): string {
+function encodeTime(now, len) {
   if (isNaN(now)) {
     throw new Error(now + " must be a number")
   }
@@ -86,7 +87,7 @@ export function encodeTime(now: number, len: number): string {
   return str
 }
 
-export function encodeRandom(len: number, prng: PRNG): string {
+export function encodeRandom(len, prng) {
   let str = ""
   for (; len > 0; len--) {
     str = randomChar(prng) + str
@@ -94,7 +95,7 @@ export function encodeRandom(len: number, prng: PRNG): string {
   return str
 }
 
-export function decodeTime(id: string): number {
+export function decodeTime(id) {
   if (id.length !== TIME_LEN + RANDOM_LEN) {
     throw createError("malformed ulid")
   }
@@ -115,7 +116,11 @@ export function decodeTime(id: string): number {
   return time
 }
 
-export function detectPrng(allowInsecure: boolean = false, root?: any): PRNG {
+export function isValid(id) {
+  return id && id.length !== TIME_LEN + RANDOM_LEN;
+}
+
+function detectPrng(allowInsecure = false, root) {
   if (!root) {
     root = typeof window !== "undefined" ? window : null
   }
@@ -124,9 +129,9 @@ export function detectPrng(allowInsecure: boolean = false, root?: any): PRNG {
 
   if (browserCrypto) {
     return () => {
-        const buffer = new Uint8Array(1)
-        browserCrypto.getRandomValues(buffer)
-        return buffer[0] / 0xff
+      const buffer = new Uint8Array(1)
+      browserCrypto.getRandomValues(buffer)
+      return buffer[0] / 0xff
     }
   } else {
     try {
@@ -145,11 +150,11 @@ export function detectPrng(allowInsecure: boolean = false, root?: any): PRNG {
   throw createError("secure crypto unusable, insecure Math.random not allowed")
 }
 
-export function factory(currPrng?: PRNG): ULID {
+export function factory(currPrng) {
   if (!currPrng) {
     currPrng = detectPrng()
   }
-  return function ulid(seedTime?: number): string {
+  return function ulid(seedTime) {
     if (isNaN(seedTime)) {
       seedTime = Date.now()
     }
@@ -157,13 +162,14 @@ export function factory(currPrng?: PRNG): ULID {
   }
 }
 
-export function monotonicFactory(currPrng?: PRNG): ULID {
+export function monotonicFactory(currPrng) {
   if (!currPrng) {
     currPrng = detectPrng()
   }
-  let lastTime: number = 0
-  let lastRandom: string
-  return function ulid(seedTime?: number): string {
+
+  let lastTime = 0
+  let lastRandom
+  return function ulid(seedTime) {
     if (isNaN(seedTime)) {
       seedTime = Date.now()
     }
